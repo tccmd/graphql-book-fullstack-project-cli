@@ -1,0 +1,9 @@
+{
+  "name": "graphql-book-fullstack-project-cli",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/tccmd/graphql-book-fullstack-project-cli.git",
+  "author": "tccmd <tccmd52@gmail.com>",
+  "license": "MIT",
+  "private": true
+}
