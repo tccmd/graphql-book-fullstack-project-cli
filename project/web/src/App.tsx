@@ -4,6 +4,8 @@ import { ChakraProvider, Box, Text, theme } from "@chakra-ui/react";
 // import * as React from "react";
 import FilmList from "./components/film/FilmList";
 import { createApolloClient } from "./apollo/createApolloClient";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import Main from "./pages/Main";
 
 // Apollo Client 인스턴스 생성
 const apolloClient = createApolloClient();
@@ -14,12 +16,11 @@ export const App = () => (
   <ApolloProvider client={apolloClient}>
     {/* ChakraProvider로 앱 전체에 Chakra UI 테마를 적용 */}
     <ChakraProvider theme={theme}>
-      {/* Chakra UI의 Box 컴포넌트를 사용해 텍스트를 중앙 정렬 */}
-      <Box textAlign="center" fontSize="xl">
-        {/* Chakra UI의 Text 컴포넌트를 사용해 텍스트 표시 */}
-        <Text>Ghibli GraphQL</Text>
-        <FilmList />
-      </Box>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Main />} />
+        </Routes>
+      </BrowserRouter>
     </ChakraProvider>
   </ApolloProvider>
 );
