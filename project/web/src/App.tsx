@@ -1,11 +1,10 @@
 // Apollo Client와 관련된 모듈을 import
 import { ApolloProvider } from "@apollo/client";
-import { ChakraProvider, Box, Text, theme } from "@chakra-ui/react";
-// import * as React from "react";
-import FilmList from "./components/film/FilmList";
+import { ChakraProvider, theme } from "@chakra-ui/react";
 import { createApolloClient } from "./apollo/createApolloClient";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Main from "./pages/Main";
+import Film from "./pages/Film";
 
 // Apollo Client 인스턴스 생성
 const apolloClient = createApolloClient();
@@ -19,6 +18,7 @@ export const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Main />} />
+          <Route path="/film/:filmId" element={<Film />} />
         </Routes>
       </BrowserRouter>
     </ChakraProvider>
