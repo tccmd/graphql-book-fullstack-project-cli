@@ -6,13 +6,19 @@ import http from "http";
 import { buildSchema } from "type-graphql";
 import { FilmResolver } from "./resolvers/Film";
 import { CutResolver } from "./resolvers/Cut";
+import { createDB } from "./db/db-client";
+import { UserResolver } from "./resolvers/User";
+import dotenv from "dotenv";
+
+// .env 파일에서 작성한 모든 환경변수는 process.env에 주입되었다.
+dotenv.config();
 
 async function main() {
   const app = express();
 
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [FilmResolver, CutResolver],
+      resolvers: [FilmResolver, CutResolver, UserResolver],
     }),
     plugins: [ApolloServerPluginLandingPageLocalDefault()],
   });
@@ -38,6 +44,8 @@ async function main() {
             `);
     }
   });
+
+  await createDB();
 }
 
 main().catch((err) => console.error(err));

@@ -5,6 +5,7 @@ import { createApolloClient } from "./apollo/createApolloClient";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import Main from "./pages/Main";
 import Film from "./pages/Film";
+import SignUp from "./pages/SignUp";
 
 // Apollo Client 인스턴스 생성
 const apolloClient = createApolloClient();
@@ -19,6 +20,7 @@ export const App = () => (
         <Routes>
           <Route path="/" element={<Main />} />
           <Route path="/film/:filmId" element={<Film />} />
+          <Route path="/signup" element={<SignUp />} />
         </Routes>
       </BrowserRouter>
     </ChakraProvider>
