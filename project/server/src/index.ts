@@ -13,7 +13,19 @@ async function main() {
 
   const apolloServer = await createApolloServer();
   await apolloServer.start();
-  apolloServer.applyMiddleware({ app });
+  apolloServer.applyMiddleware({
+    app,
+    cors: {
+      // 아폴로 스튜디오를 GraphQL 테스트 용도로 활용하기 위해 https://studio.apollographql.com도 허용하도록 구성
+      origin: [
+        "http://localhost:3000",
+        "https://studio.apollographql.com",
+        "http://ghibli-graphql-cli-bucket.s3-website.ap-northeast-2.amazonaws.com",
+        "http://ghibli-graphql-cli-vercel-bucket.s3-website.ap-northeast-2.amazonaws.com"
+      ],
+      credentials: true,
+    },
+  });
 
   const httpServer = http.createServer(app);
 

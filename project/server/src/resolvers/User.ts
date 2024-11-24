@@ -14,8 +14,11 @@ import {
 import User from "../entities/User";
 // 비밀번호 해시화를 위한 argon2 라이브러리 전체를 불러옴
 import * as argon2 from "argon2";
-import jwt from "jsonwebtoken";
-import { createAccessToken } from "../utils/jwt-auth";
+import {
+  createAccessToken,
+  createRefreshToken,
+  setRefreshTokenHeader,
+} from "../utils/jwt-auth";
 import { MyContext } from "../apollo/createApolloServer";
 import { isAuthenticated } from "../middleweres/isAutheticated";
 
@@ -83,7 +86,8 @@ export class UserResolver {
 
   @Mutation(() => LoginResponse)
   public async login(
-    @Arg("loginInput") loginInput: LoginInput
+    @Arg("loginInput") loginInput: LoginInput,
+    @Ctx() { res }: MyContext
   ): Promise<LoginResponse> {
     // 입력받은 loginInput 데이터로부터 emailOrusername과 password를 가져온다.
     const { emailOrUsername, password } = loginInput;
@@ -113,6 +117,11 @@ export class UserResolver {
 
     // 엑세스 토큰 발급
     const accessToken = createAccessToken(user);
+    // 리프레시 토큰 발급
+    const refreshToken = createRefreshToken(user);
+    // 리프레시 토큰 헤더 설정
+    setRefreshTokenHeader(res, refreshToken);
+
     // 올바른 비밀번호인 경우 로그인이 완료되었으므로 user 정보를 반환
     return { user, accessToken };
   }

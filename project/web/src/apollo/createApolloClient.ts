@@ -29,7 +29,10 @@ const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
 });
 
 // Apollo 링크 - HttpLink: HTTP 통신을 통해 각 GraphQL 요청을 서버로 보내기 위한 노드
-const httpLink = new HttpLink({ uri: "http://localhost:4000/graphql" });
+const httpLink = new HttpLink({
+  uri: `${process.env.REACT_APP_API_HOST}/graphql`,
+  credentials: "include",
+});
 
 // Apollo 링크 - 헤더로 엑세스 토큰을 지정해주는 작업을 실행하는 링크
 const authLink = setContext((req, prevContext) => {
