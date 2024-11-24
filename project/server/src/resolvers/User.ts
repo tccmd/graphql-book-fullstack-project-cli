@@ -2,17 +2,22 @@
 import { IsEmail, IsString } from "class-validator";
 import {
   Arg,
+  Ctx,
   Field,
   InputType,
   Mutation,
   ObjectType,
+  Query,
   Resolver,
+  UseMiddleware,
 } from "type-graphql";
 import User from "../entities/User";
 // 비밀번호 해시화를 위한 argon2 라이브러리 전체를 불러옴
 import * as argon2 from "argon2";
 import jwt from "jsonwebtoken";
 import { createAccessToken } from "../utils/jwt-auth";
+import { MyContext } from "../apollo/createApolloServer";
+import { isAuthenticated } from "../middleweres/isAutheticated";
 
 // GraphQL에서 입력으로 받을 데이터 구조를 정의하는 클래스
 // 이 클래스는 GraphQL의 InputType으로 사용되며, 회원가입 요청 시 필요한 데이터를 정의함
@@ -110,5 +115,12 @@ export class UserResolver {
     const accessToken = createAccessToken(user);
     // 올바른 비밀번호인 경우 로그인이 완료되었으므로 user 정보를 반환
     return { user, accessToken };
+  }
+
+  @UseMiddleware(isAuthenticated)
+  @Query(() => User, { nullable: true })
+  async me(@Ctx() ctx: MyContext): Promise<User | undefined> {
+    if (!ctx.verifiedUser) return undefined;
+    return User.findOne({ where: { id: ctx.verifiedUser.userId } });
   }
 }

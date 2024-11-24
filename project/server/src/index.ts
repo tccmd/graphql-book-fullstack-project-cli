@@ -1,14 +1,9 @@
 import "reflect-metadata";
 import express from "express";
-import { ApolloServer } from "apollo-server-express";
-import { ApolloServerPluginLandingPageLocalDefault } from "apollo-server-core";
 import http from "http";
-import { buildSchema } from "type-graphql";
-import { FilmResolver } from "./resolvers/Film";
-import { CutResolver } from "./resolvers/Cut";
 import { createDB } from "./db/db-client";
-import { UserResolver } from "./resolvers/User";
 import dotenv from "dotenv";
+import createApolloServer from "./apollo/createApolloServer";
 
 // .env 파일에서 작성한 모든 환경변수는 process.env에 주입되었다.
 dotenv.config();
@@ -16,12 +11,7 @@ dotenv.config();
 async function main() {
   const app = express();
 
-  const apolloServer = new ApolloServer({
-    schema: await buildSchema({
-      resolvers: [FilmResolver, CutResolver, UserResolver],
-    }),
-    plugins: [ApolloServerPluginLandingPageLocalDefault()],
-  });
+  const apolloServer = await createApolloServer();
   await apolloServer.start();
   apolloServer.applyMiddleware({ app });
 
