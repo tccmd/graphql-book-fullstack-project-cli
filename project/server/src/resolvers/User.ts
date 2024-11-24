@@ -27,7 +27,7 @@ export class SignUpInput {
 
 @InputType({ description: "로그인 인풋 데이터" })
 export class LoginInput {
-  @Field() @IsString() emailOrusername: string;
+  @Field() @IsString() emailOrUsername: string;
   @Field() @IsString() password: string;
 }
 
@@ -81,17 +81,17 @@ export class UserResolver {
     @Arg("loginInput") loginInput: LoginInput
   ): Promise<LoginResponse> {
     // 입력받은 loginInput 데이터로부터 emailOrusername과 password를 가져온다.
-    const { emailOrusername, password } = loginInput;
+    const { emailOrUsername, password } = loginInput;
 
     // 이후 데이터베이스에서 해당 email 또는 username을 가지는 유저 정보를 찾는다.
     const user = await User.findOne({
-      where: [{ email: emailOrusername }, { username: emailOrusername }],
+      where: [{ email: emailOrUsername }, { username: emailOrUsername }],
     });
     if (!user)
       return {
         // 만약 유저를 못 찾는다면 FieldError의 배열을 반환한다.
         errors: [
-          { field: "emailOrusername", message: "해당하는 유저가 없습니다." },
+          { field: "emailOrUsername", message: "해당하는 유저가 없습니다." },
         ],
       };
 
