@@ -21,7 +21,10 @@ async function main() {
         "http://localhost:3000",
         "https://studio.apollographql.com",
         "http://ghibli-graphql-cli-bucket.s3-website.ap-northeast-2.amazonaws.com",
-        "http://ghibli-graphql-cli-vercel-bucket.s3-website.ap-northeast-2.amazonaws.com"
+        "http://ghibli-graphql-cli-vercel-bucket.s3-website.ap-northeast-2.amazonaws.com",
+        "https://web-ashy-alpha.vercel.app",
+        "https://tccmd.site",
+        "https://www.tccmd.site",
       ],
       credentials: true,
     },

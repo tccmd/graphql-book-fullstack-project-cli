@@ -62,7 +62,7 @@ function RealLoginForm(): React.ReactElement {
     >
       <Stack as="form" spacing={4} onSubmit={handleSubmit(onSubmit)}>
         <FormControl isInvalid={!!errors.loginInput?.emailOrUsername}>
-          <FormLabel>아매알 또는 아이디</FormLabel>
+          <FormLabel>이메일 또는 아이디</FormLabel>
           <Input
             type="emailOrUsername"
             placeholder="이메일 또는 아이디를 입력하세요."

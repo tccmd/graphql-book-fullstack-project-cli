@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../entities/User";
 import { AuthenticationError } from "apollo-server-express";
 import { IncomingHttpHeaders } from "http";
-import { Response } from 'express';
+import { Response } from "express";
 
 export const DEFAUT_JWT_SECRET_KEY = "secret-key";
 export const REFRESH_JWT_SECRET_KEY = "secret-key2";
@@ -74,16 +74,22 @@ export const createRefreshToken = (user: User): string => {
 };
 
 // 리프레시 토큰 헤더
-export const setRefreshTokenHeader = (res: Response, refreshToken: string): void => {
+export const setRefreshTokenHeader = (
+  res: Response,
+  refreshToken: string
+): void => {
   // rex.cookie 함수를 통해 응답에서 쿠키를 함께 전송하도록 구성
   // 쿠키 이름 'refreshtoken'
   // 발급한 리플시 토큰이 데이터로 설정되도록 함
-  res.cookie('refreshtoken', refreshToken, {
+  res.cookie("refreshtoken", refreshToken, {
     // 자바스크립트 코드로 이 토큰에 접근할 수 없도록 httpOnly 옵션 설정
     httpOnly: true,
     // 프로덕션 환경의 경우 https 프로토콜에서만 동작하도록 secure 옵션 구성
-    secure: process.env.NODE_ENV === 'production',
+    secure: process.env.NODE_ENV === "production",
+    // secure: true,
     // 사이트 내 요청만 허용하도록 구성
-    sameSite: 'lax',
+    sameSite: "lax",
+    // sameSite: "none", // 크로스-도메인 요청 허용
+    // domain: ".tccmd.site",
   });
 };

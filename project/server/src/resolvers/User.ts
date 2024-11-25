@@ -21,6 +21,7 @@ import {
 } from "../utils/jwt-auth";
 import { MyContext } from "../apollo/createApolloServer";
 import { isAuthenticated } from "../middleweres/isAutheticated";
+import Token from "../entities/Token";
 
 // GraphQL에서 입력으로 받을 데이터 구조를 정의하는 클래스
 // 이 클래스는 GraphQL의 InputType으로 사용되며, 회원가입 요청 시 필요한 데이터를 정의함
@@ -119,7 +120,13 @@ export class UserResolver {
     const accessToken = createAccessToken(user);
     // 리프레시 토큰 발급
     const refreshToken = createRefreshToken(user);
-    // 리프레시 토큰 헤더 설정
+    // 리프레시 토큰 MySQL에 저장
+    await Token.upsert(
+      { userId: user.id, refreshToken }, // 저장할 데이터
+      { conflictPaths: ["userId"] } // userId가 동일한 경우 업데이트
+    );
+
+    // 쿠키로 리프레시 토큰 전송
     setRefreshTokenHeader(res, refreshToken);
 
     // 올바른 비밀번호인 경우 로그인이 완료되었으므로 user 정보를 반환
