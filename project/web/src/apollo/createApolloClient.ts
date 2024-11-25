@@ -1,32 +1,53 @@
 import {
   ApolloClient,
   from,
+  fromPromise,
   HttpLink,
   NormalizedCacheObject,
 } from "@apollo/client";
 import { createApolloCache } from "./createApolloCache";
 import { onError } from "@apollo/client/link/error";
 import { setContext } from "@apollo/client/link/context";
+import { refreshAccessToken } from "./auth";
+let apolloClient: ApolloClient<NormalizedCacheObject>;
+
+export const initializeApolloClient = () => {
+  if (!apolloClient) {
+    apolloClient = createApolloClient();
+  }
+  return apolloClient;
+};
 
 // Apollo 링크 - onError 링크
-const errorLink = onError(({ graphQLErrors, networkError, operation }) => {
-  if (graphQLErrors) {
-    graphQLErrors.forEach(({ message, locations, path }) => {
-      console.log(
-        `[GraphQL error]: -> ${operation.operationName}
+const errorLink = onError(
+  // eslint-disable-next-line consistent-return
+  ({ graphQLErrors, networkError, operation, forward }) => {
+    if (graphQLErrors) {
+      if (graphQLErrors.find((err) => err.message === "access token expired")) {
+        const client = initializeApolloClient(); // 클라이언트 초기화
+        return fromPromise(refreshAccessToken(client, operation))
+          .filter((result) => !!result)
+          .flatMap(() => forward(operation));
+      }
+
+      graphQLErrors.forEach(({ message, locations, path }) =>
+        // eslint-disable-next-line no-console
+        console.log(
+          `[GraphQL error]: -> ${operation.operationName} 
         Message: ${message}, Query: ${path}, Location: ${JSON.stringify(
-          locations
-        )}
-        `
+            locations
+          )}`
+        )
       );
-    });
+    }
+
+    if (networkError) {
+      // eslint-disable-next-line no-console
+      console.log(`[networkError]: -> ${operation.operationName}
+    Message: ${networkError.message}`);
+    }
   }
-  if (networkError) {
-    console.log(`[networkError]: -> ${operation.operationName}
-      Message: ${networkError.message}
-      `);
-  }
-});
+);
 
 // Apollo 링크 - HttpLink: HTTP 통신을 통해 각 GraphQL 요청을 서버로 보내기 위한 노드
 const httpLink = new HttpLink({
@@ -50,7 +71,7 @@ export const createApolloClient = (): ApolloClient<NormalizedCacheObject> =>
   // Apollo Client 인스턴스 생성
   new ApolloClient({
     // GraphQL 서버의 URI를 설정 (로컬에서 실행 중인 서버를 가리킴)
-    uri: `${process.env.REACT_APP_API_HOST}/graphql`,
+    // uri: `${process.env.REACT_APP_API_HOST}/graphql`,
     // Apollo Client의 캐시 정책 설정
     cache: createApolloCache(),
     link: from([errorLink, authLink, httpLink]),

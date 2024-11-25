@@ -33,4 +33,7 @@ export default class User extends BaseEntity {
   @Field(() => String, { description: "업데이트 일자" })
   @UpdateDateColumn({ comment: "업데이트 일자" }) // typeorm
   updatedAt: Date;
+
+  @Column({ nullable: true })
+  refreshToken: string; // 리프레시 토큰 필드 추가
 }

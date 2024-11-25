@@ -17,7 +17,7 @@ export const createAccessToken = (user: User): string => {
   const accessToken = jwt.sign(
     userData,
     process.env.JWT_SECRET_KEY || "secret-key",
-    { expiresIn: "30m" }
+    { expiresIn: "10s" }
   );
   return accessToken;
 };
@@ -90,6 +90,6 @@ export const setRefreshTokenHeader = (
     // 사이트 내 요청만 허용하도록 구성
     sameSite: "lax",
     // sameSite: "none", // 크로스-도메인 요청 허용
-    // domain: ".tccmd.site",
+    // domain: "www.tccmd.site",
   });
 };

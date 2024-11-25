@@ -17,11 +17,12 @@ import * as argon2 from "argon2";
 import {
   createAccessToken,
   createRefreshToken,
+  REFRESH_JWT_SECRET_KEY,
   setRefreshTokenHeader,
 } from "../utils/jwt-auth";
 import { MyContext } from "../apollo/createApolloServer";
 import { isAuthenticated } from "../middleweres/isAutheticated";
-import Token from "../entities/Token";
+import jwt from "jsonwebtoken";
 
 // GraphQL에서 입력으로 받을 데이터 구조를 정의하는 클래스
 // 이 클래스는 GraphQL의 InputType으로 사용되며, 회원가입 요청 시 필요한 데이터를 정의함
@@ -56,6 +57,11 @@ class LoginResponse {
 
   @Field({ nullable: true })
   accessToken?: string;
+}
+
+@ObjectType({ description: "액세스 토큰 새로고침 반환 데이터" })
+class RefreshAccessTokenResponse {
+  @Field() accessToken: string;
 }
 
 @Resolver(User)
@@ -121,10 +127,7 @@ export class UserResolver {
     // 리프레시 토큰 발급
     const refreshToken = createRefreshToken(user);
     // 리프레시 토큰 MySQL에 저장
-    await Token.upsert(
-      { userId: user.id, refreshToken }, // 저장할 데이터
-      { conflictPaths: ["userId"] } // userId가 동일한 경우 업데이트
-    );
+    await User.update(user.id, { refreshToken });
 
     // 쿠키로 리프레시 토큰 전송
     setRefreshTokenHeader(res, refreshToken);
@@ -135,8 +138,60 @@ export class UserResolver {
 
   @UseMiddleware(isAuthenticated)
   @Query(() => User, { nullable: true })
-  async me(@Ctx() ctx: MyContext): Promise<User | undefined> {
-    if (!ctx.verifiedUser) return undefined;
+  async me(@Ctx() ctx: MyContext): Promise<User | null> {
+    if (!ctx.verifiedUser) return null;
     return User.findOne({ where: { id: ctx.verifiedUser.userId } });
+  }
+
+  @Mutation(() => RefreshAccessTokenResponse, { nullable: true })
+  async refreshAccessToken(
+    @Ctx() { req, res }: MyContext
+  ): Promise<RefreshAccessTokenResponse | null> {
+    console.log("UserResolver_refreshAccessToken 실행됨");
+    // 요청 객체로 req로 부터 "refreshtoken" 쿠키값을 가져온다.
+    const refreshToken = req.cookies.refreshtoken;
+    console.log("UserResolver_refreshAccessToken_refreshToken", refreshToken);
+
+    // 해당 쿠키가 없을 경우 액세스 토큰을 재발급하지 않고 null 반환
+    if (!refreshToken) return null;
+
+    // 있는 경우
+    let tokenData: any = null;
+    try {
+      // 해당 리프레시 토큰을 jwt.verify로 검증
+      tokenData = jwt.verify(refreshToken, REFRESH_JWT_SECRET_KEY);
+      console.log("UserResolver_refreshAccessToken_tokenData", tokenData);
+    } catch (e) {
+      // 리프레시 토큰이 만료되었거나, 올바르지 못한 토큰이 전달되어 검증할 수 없다면 null 반환
+      console.error(e);
+      return null;
+    }
+    // 리프레시 토큰이 만료되었거나, 올바르지 못한 토큰이 전달되어 검증할 수 없다면 null 반환
+    if (!tokenData) return null;
+
+    // MySQL에서 해당 유저의 리프레시 토큰을 가져옴
+    const user = await User.findOne({ where: { id: tokenData.userId } });
+    if (!user) return null;
+
+    // DB에 저장된 리프레시 토큰과 비교
+    if (user.refreshToken !== refreshToken) return null;
+
+    // 여기까지의 과정(리프래시 토큰 쿠키값 존재, 검증된 토큰, MySQL에 userId로 저장된 값 존재, 레디스 값과 전송된 리프레시 토큰 같음, DB에 User 존재)을 모두 통과한 경우
+    // 새로 발급할 액세스 및 리프레시 토큰 생성
+    const newAccessToken = createAccessToken(user); // 액세스 토큰 생성
+    const newRefreshToken = createRefreshToken(user); // 리프레시 토큰 생성
+    // MySQL에 새로운 리프레시 토큰 저장 (기존 기록 업데이트)
+    // 새로운 리프레시 토큰을 DB에 저장
+    await User.update(user.id, { refreshToken });
+
+    // 쿠키로 새로 발급한 리프레시 토큰 전송
+    res.cookie("refreshtoken", newRefreshToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+    });
+
+    // 새롭게 발급한 액세스 토큰 반환
+    return { accessToken: newAccessToken };
   }
 }

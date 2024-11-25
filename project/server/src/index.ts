@@ -4,12 +4,14 @@ import http from "http";
 import { createDB } from "./db/db-client";
 import dotenv from "dotenv";
 import createApolloServer from "./apollo/createApolloServer";
+import cookieParser from "cookie-parser";
 
 // .env 파일에서 작성한 모든 환경변수는 process.env에 주입되었다.
 dotenv.config();
 
 async function main() {
   const app = express();
+  app.use(cookieParser());
 
   const apolloServer = await createApolloServer();
   await apolloServer.start();

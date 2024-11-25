@@ -22,7 +22,9 @@ export default function FilmList(): JSX.Element {
     <SimpleGrid columns={[2, null, 3]} spacing={[2, null, 10]}>
       {/* 로딩 중일 때는 6개의 Skeleton(로딩 중임을 보여주는 뼈대 UI)을 출력 */}
       {loading &&
-        new Array(6).fill(0).map((x) => <Skeleton key={x} height="400px" />)}
+        new Array(6)
+          .fill(0)
+          .map((_, index) => <Skeleton key={index} height="400px" />)}
 
       {/* 로딩이 끝나고 데이터가 존재할 때, 영화 데이터를 반복하여 FilmCard 컴포넌트에 전달 */}
       {!loading &&
