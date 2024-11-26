@@ -21,7 +21,7 @@ import {
   setRefreshTokenHeader,
 } from "../utils/jwt-auth";
 import { MyContext } from "../apollo/createApolloServer";
-import { isAuthenticated } from "../middleweres/isAutheticated";
+import { isAuthenticated } from "../middleweres/isAuthenticated";
 import jwt from "jsonwebtoken";
 
 // GraphQL에서 입력으로 받을 데이터 구조를 정의하는 클래스

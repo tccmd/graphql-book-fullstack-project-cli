@@ -1,6 +1,7 @@
 import { Connection, createConnection } from "typeorm";
 import User from "../entities/User";
 import { CutVote } from "../entities/CutVote";
+import { CutReview } from "../entities/CutReview";
 
 export const createDB = async (): Promise<Connection> => {
   console.log("DB_HOST:", process.env.DB_HOST);
@@ -16,10 +17,10 @@ export const createDB = async (): Promise<Connection> => {
       username: process.env.DB_USERNAME,
       password: process.env.DB_PASSWORD,
       logging: !(process.env.NODE_ENV === "production"),
-      synchronize: true, // entities에 명시된 데이터 모델들을 DB에 자동으로 동기화
-      entities: [User, CutVote], // entities 폴더의 모든 데이터 모델이 위치해야 한다.
+      synchronize: !(process.env.NODE_ENV === "production"), // entities에 명시된 데이터 모델들을 DB에 자동으로 동기화
+      entities: [User, CutVote, CutReview], // entities 폴더의 모든 데이터 모델이 위치해야 한다.
       extra: {
-        connectTimeout: 30000, // 요청 시간을 30초로 설정 (밀리초 단위)
+        connectTimeout: 80000, // 요청 시간을 30초로 설정 (밀리초 단위)
       },
     });
     console.log("Database connection established successfully.");

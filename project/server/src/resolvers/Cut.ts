@@ -12,7 +12,7 @@ import {
 import { Cut } from "../entities/Cut";
 import { Film } from "../entities/Film";
 import ghibliData from "../data/ghibli";
-import { isAuthenticated } from "../middleweres/isAutheticated";
+import { isAuthenticated } from "../middleweres/isAuthenticated";
 import { MyContext } from "../apollo/createApolloServer";
 import { CutVote } from "../entities/CutVote";
 
