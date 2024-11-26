@@ -150,7 +150,7 @@ export class UserResolver {
     console.log("UserResolver_refreshAccessToken 실행됨");
     // 요청 객체로 req로 부터 "refreshtoken" 쿠키값을 가져온다.
     const refreshToken = req.cookies.refreshtoken;
-    console.log("UserResolver_refreshAccessToken_refreshToken", refreshToken);
+    // console.log("UserResolver_refreshAccessToken_refreshToken", refreshToken);
 
     // 해당 쿠키가 없을 경우 액세스 토큰을 재발급하지 않고 null 반환
     if (!refreshToken) return null;
@@ -160,7 +160,7 @@ export class UserResolver {
     try {
       // 해당 리프레시 토큰을 jwt.verify로 검증
       tokenData = jwt.verify(refreshToken, REFRESH_JWT_SECRET_KEY);
-      console.log("UserResolver_refreshAccessToken_tokenData", tokenData);
+      // console.log("UserResolver_refreshAccessToken_tokenData", tokenData);
     } catch (e) {
       // 리프레시 토큰이 만료되었거나, 올바르지 못한 토큰이 전달되어 검증할 수 없다면 null 반환
       console.error(e);
@@ -193,5 +193,16 @@ export class UserResolver {
 
     // 새롭게 발급한 액세스 토큰 반환
     return { accessToken: newAccessToken };
+  }
+
+  @Mutation(() => Boolean)
+  @UseMiddleware(isAuthenticated)
+  async logout(@Ctx() { verifiedUser, res }: MyContext): Promise<boolean> {
+    if (verifiedUser) {
+      setRefreshTokenHeader(res, ""); // 리프레시 토큰 쿠키 제거
+      // 2. MySQL에서 해당 유저의 refreshToken 제거 (null로 업데이트)
+      await User.update(verifiedUser.userId, { refreshToken: "" }); // MySQL 토큰 제거
+    }
+    return true; // 성공적으로 로그아웃 처리
   }
 }

@@ -4,6 +4,10 @@ import {
   Button,
   Flex,
   Link,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuList,
   Stack,
   useColorModeValue,
 } from "@chakra-ui/react";
@@ -11,12 +15,40 @@ import { ColorModeSwitcher } from "../ColorModeSwitcher";
 import { Link as RouterLink } from "react-router-dom";
 import { useMeQuery } from "../../generated/graphql";
 import { useMemo } from "react";
+import { useLogoutMutation } from "../../generated/graphql";
+import { useApolloClient } from "@apollo/client";
 
 const LoggedInNavbarItem = (): JSX.Element => {
+  const client = useApolloClient();
+  const [logout, { loading: logoutLoading }] = useLogoutMutation();
+
+  async function onLogoutClick() {
+    try {
+      // 로그아웃 뮤테이션 요청
+      await logout();
+      // localStorage에서 액세스 토큰 제거
+      localStorage.removeItem("access_token");
+      // 아폴로 클라이언트 캐시 모두 리셋
+      await client.resetStore();
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
   return (
     <Stack justify="flex-end" alignItems="center" direction="row" spacing={3}>
       <ColorModeSwitcher />
-      <Avatar size="sm" />
+
+      <Menu>
+        <MenuButton>
+          <Avatar size="sm" />
+        </MenuButton>
+        <MenuList minW={300}>
+          <MenuItem isDisabled={logoutLoading} onClick={onLogoutClick}>
+            로그아웃
+          </MenuItem>
+        </MenuList>
+      </Menu>
     </Stack>
   );
 };
