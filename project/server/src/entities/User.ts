@@ -4,9 +4,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from "typeorm";
+import { CutVote } from "./CutVote";
 
 @ObjectType() // type-graphql
 @Entity() // typeorm
@@ -36,4 +38,7 @@ export default class User extends BaseEntity {
 
   @Column({ nullable: true })
   refreshToken: string; // 리프레시 토큰 필드 추가
+
+  @OneToMany(() => CutVote, (cutVote) => cutVote.user)
+  cutVotes: CutVote[];
 }
