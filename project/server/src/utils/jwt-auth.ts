@@ -4,7 +4,7 @@ import { AuthenticationError } from "apollo-server-express";
 import { IncomingHttpHeaders } from "http";
 import { Response } from "express";
 
-export const DEFAUT_JWT_SECRET_KEY = "secret-key";
+export const DEFAULT_JWT_SECRET_KEY = "secret-key";
 export const REFRESH_JWT_SECRET_KEY = "secret-key2";
 
 export interface JwtVerifiedUser {
@@ -26,15 +26,17 @@ export const createAccessToken = (user: User): string => {
 // accessToken 문자열을 인자로 받는다
 export const verifyAccessToken = (
   accessToken?: string
-): JwtVerifiedUser | null => {
+): JwtVerifiedUser => {
   // 액세스 토큰이 없다면 null 반환
-  if (!accessToken) return null;
+  if (!accessToken) {
+    throw new AuthenticationError("Access token is missing");
+  }
   // 있으면 jwt.verify 함수를 통해 검증 및 디코딩
   try {
     // 올바른 토큰일 경우 토큰 생성 시 입력한 데이터를 그대로 반환, JwtVerifiedUser 타입으로 데이터를 반환
     const verified = jwt.verify(
       accessToken,
-      process.env.JWT_SECRET_KEY || DEFAUT_JWT_SECRET_KEY
+      process.env.JWT_SECRET_KEY || DEFAULT_JWT_SECRET_KEY
     ) as JwtVerifiedUser;
     return verified;
   } catch (err) {
@@ -51,9 +53,16 @@ export const verifyAccessTokenFromReqHeaders = (
   // 요청 객체의 headers 필드에 Authorization 헤더가
   const { authorization } = headers;
   // 없다면 null 반환
-  if (!authorization) return null;
+  if (!authorization) {
+    console.error("Authorization header is missing");
+    return null;
+  }
 
   const accessToken = authorization.split(" ")[1];
+  if (!accessToken) {
+    console.error("Access token is missing in Authorization header");
+    return null;
+  }
   try {
     // verifyAccessToken 함수 실행
     return verifyAccessToken(accessToken);

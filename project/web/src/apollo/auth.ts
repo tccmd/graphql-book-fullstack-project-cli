@@ -17,10 +17,15 @@ export const refreshAccessToken = (
       mutation: RefreshAccessTokenDocument,
     })
     .then(({ data }) => {
+      // 디버깅: 뮤테이션 결과 확인
+      console.log("Mutation result:", data);
+
       const newAccessToken = data?.refreshAccessToken?.accessToken;
       // 새로 발급된 액세스 토큰이 응답되지 않은 경우 기존 액세스 토큰은 유효하지 않은 것이고,
       // 리프레시 토큰을 통해 재발급도 불가능한 상태이므로 localStorage의 access_token 제거
       if (!newAccessToken) {
+        // 디버깅: 새 토큰이 없는 경우 확인
+        console.error("No new access token. Clearing localStorage.");
         localStorage.setItem("access_token", "");
         return false;
       }
@@ -28,15 +33,26 @@ export const refreshAccessToken = (
       localStorage.setItem("access_token", newAccessToken);
       // operation의 getContext() 함수와 setContext() 함수를 통해 authLink에서와 같이 authorization 헤더에 새로운 액세스 토큰이 설정되도록 구성
       const prevContext = operation.getContext();
+
+      // 디버깅: 기존 context 확인
+      console.log("Previous context:", prevContext);
+
+      // 새로운 액세스 토큰을 포함하도록 context 업데이트
       operation.setContext({
         headers: {
           ...prevContext.headers,
           authorization: `Bearer ${newAccessToken}`,
         },
       });
+
+      // 디버깅: 업데이트된 context 확인
+      console.log("Updated context:", operation.getContext());
       return true;
     })
-    .catch(() => {
+    .catch((error) => {
+      // 디버깅: 에러 확인
+      console.error("Error during token refresh:", error);
+
       localStorage.setItem("access_token", "");
       return false;
     });

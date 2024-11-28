@@ -1,5 +1,5 @@
 // 이메일 유효성 검사를 위한 데코레이터와 문자열 유효성 검사를 위한 데코레이터를 class-validator에서 가져옴
-import { IsEmail, IsString } from "class-validator";
+import { IsEmail, IsString } from 'class-validator';
 import {
   Arg,
   Ctx,
@@ -10,19 +10,24 @@ import {
   Query,
   Resolver,
   UseMiddleware,
-} from "type-graphql";
-import User from "../entities/User";
+} from 'type-graphql';
+import * as argon2 from 'argon2';
+import jwt from 'jsonwebtoken';
+import User from '../entities/User';
 // 비밀번호 해시화를 위한 argon2 라이브러리 전체를 불러옴
-import * as argon2 from "argon2";
 import {
   createAccessToken,
   createRefreshToken,
   REFRESH_JWT_SECRET_KEY,
   setRefreshTokenHeader,
-} from "../utils/jwt-auth";
-import { MyContext } from "../apollo/createApolloServer";
-import { isAuthenticated } from "../middleweres/isAuthenticated";
-import jwt from "jsonwebtoken";
+} from '../utils/jwt-auth';
+import { MyContext } from '../apollo/createApolloServer';
+import { isAuthenticated } from '../middleweres/isAuthenticated';
+// 파일을 저장할 때 필요
+// import { createWriteStream } from 'fs';
+// GraphQL 파일 업로드를 위해 필요한 타입과 스칼라(GraphQLUpload)
+import { FileUpload, GraphQLUpload } from 'graphql-upload-ts';
+import { uploadImage } from '../utils/s3upload';
 
 // GraphQL에서 입력으로 받을 데이터 구조를 정의하는 클래스
 // 이 클래스는 GraphQL의 InputType으로 사용되며, 회원가입 요청 시 필요한 데이터를 정의함
@@ -35,19 +40,21 @@ export class SignUpInput {
   @Field() @IsString() password: string;
 }
 
-@InputType({ description: "로그인 인풋 데이터" })
+@InputType({ description: '로그인 인풋 데이터' })
 export class LoginInput {
   @Field() @IsString() emailOrUsername: string;
+
   @Field() @IsString() password: string;
 }
 
-@ObjectType({ description: "필드 에러 타입" })
+@ObjectType({ description: '필드 에러 타입' })
 class FieldError {
   @Field() field: string;
+
   @Field() message: string;
 }
 
-@ObjectType({ description: "로그인 반환 데이터" })
+@ObjectType({ description: '로그인 반환 데이터' })
 class LoginResponse {
   @Field(() => [FieldError], { nullable: true })
   errors?: FieldError[];
@@ -59,7 +66,7 @@ class LoginResponse {
   accessToken?: string;
 }
 
-@ObjectType({ description: "액세스 토큰 새로고침 반환 데이터" })
+@ObjectType({ description: '액세스 토큰 새로고침 반환 데이터' })
 class RefreshAccessTokenResponse {
   @Field() accessToken: string;
 }
@@ -69,7 +76,7 @@ export class UserResolver {
   // 이 함수는 User 타입의 데이터를 반환함
   @Mutation(() => User)
   // UserResolver 클래스의 signUp 메서드, 위 데코레이터로 "User 타입을 반환하는 뮤테이션"으로 구현되었다.
-  async signUp(@Arg("signUpInput") signUpInput: SignUpInput): Promise<User> {
+  async signUp(@Arg('signUpInput') signUpInput: SignUpInput): Promise<User> {
     // "signUp 뮤테이션"은 signUpInput이라는 파라미터 변수를 받도록 @Arg() 데코레이터를 통해 설정했다. signUpInput은 nullable이 아니므로, signUp 뮤테이션 요청 시 언제나 필요한 필수 파라미터이다.
     // 클라이언트가 보낸 이메일, 유저네임, 비밀번호를 signUpInput에서 추출
     const { email, username, password } = signUpInput;
@@ -93,8 +100,8 @@ export class UserResolver {
 
   @Mutation(() => LoginResponse)
   public async login(
-    @Arg("loginInput") loginInput: LoginInput,
-    @Ctx() { res }: MyContext
+    @Arg('loginInput') loginInput: LoginInput,
+    @Ctx() { res }: MyContext,
   ): Promise<LoginResponse> {
     // 입력받은 loginInput 데이터로부터 emailOrusername과 password를 가져온다.
     const { emailOrUsername, password } = loginInput;
@@ -107,7 +114,7 @@ export class UserResolver {
       return {
         // 만약 유저를 못 찾는다면 FieldError의 배열을 반환한다.
         errors: [
-          { field: "emailOrUsername", message: "해당하는 유저가 없습니다." },
+          { field: 'emailOrUsername', message: '해당하는 유저가 없습니다.' },
         ],
       };
 
@@ -118,7 +125,7 @@ export class UserResolver {
     if (!isValid)
       return {
         errors: [
-          { field: "password", message: "비밀번호를 올바르게 입력해주세요." },
+          { field: 'password', message: '비밀번호를 올바르게 입력해주세요.' },
         ],
       };
 
@@ -138,16 +145,16 @@ export class UserResolver {
 
   @UseMiddleware(isAuthenticated)
   @Query(() => User, { nullable: true })
-  async me(@Ctx() ctx: MyContext): Promise<User | null> {
+  async me(@Ctx() ctx: MyContext): Promise<User | null | undefined> {
     if (!ctx.verifiedUser) return null;
     return User.findOne({ where: { id: ctx.verifiedUser.userId } });
   }
 
   @Mutation(() => RefreshAccessTokenResponse, { nullable: true })
   async refreshAccessToken(
-    @Ctx() { req, res }: MyContext
+    @Ctx() { req, res }: MyContext,
   ): Promise<RefreshAccessTokenResponse | null> {
-    console.log("UserResolver_refreshAccessToken 실행됨");
+    console.log('UserResolver_refreshAccessToken 실행됨');
     // 요청 객체로 req로 부터 "refreshtoken" 쿠키값을 가져온다.
     const refreshToken = req.cookies.refreshtoken;
     // console.log("UserResolver_refreshAccessToken_refreshToken", refreshToken);
@@ -185,10 +192,10 @@ export class UserResolver {
     await User.update(user.id, { refreshToken });
 
     // 쿠키로 새로 발급한 리프레시 토큰 전송
-    res.cookie("refreshtoken", newRefreshToken, {
+    res.cookie('refreshtoken', newRefreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "lax",
+      sameSite: 'lax',
     });
 
     // 새롭게 발급한 액세스 토큰 반환
@@ -199,10 +206,61 @@ export class UserResolver {
   @UseMiddleware(isAuthenticated)
   async logout(@Ctx() { verifiedUser, res }: MyContext): Promise<boolean> {
     if (verifiedUser) {
-      setRefreshTokenHeader(res, ""); // 리프레시 토큰 쿠키 제거
+      setRefreshTokenHeader(res, ''); // 리프레시 토큰 쿠키 제거
       // 2. MySQL에서 해당 유저의 refreshToken 제거 (null로 업데이트)
-      await User.update(verifiedUser.userId, { refreshToken: "" }); // MySQL 토큰 제거
+      await User.update(verifiedUser.userId, { refreshToken: '' }); // MySQL 토큰 제거
     }
     return true; // 성공적으로 로그아웃 처리
+  }
+
+  // @UseMiddleware(isAuthenticated)
+  // @Mutation(() => Boolean)
+  // async uploadProfileImage(
+  //   @Ctx() { verifiedUser }: MyContext,
+  //   @Arg('file', () => GraphQLUpload)
+  //   { createReadStream, filename }: FileUpload,
+  // ): Promise<boolean> {
+  //   // const realFileName = verifiedUser?.userId + filename;
+  //   // const filePath = `public/${realFileName}`;
+
+  //   // return new Promise((resolve, reject) =>
+  //   //   createReadStream()
+  //   //     .pipe(createWriteStream(filePath))
+  //   //     .on('finish', async () => {
+  //   //       await User.update(
+  //   //         { id: verifiedUser?.userId },
+  //   //         { profileImage: realFileName },
+  //   //       );
+  //   //       return resolve(true);
+  //   //     })
+  //   //     .on('error', () => reject(Error('file upload failed'))),
+  //   // );
+  // }
+  @UseMiddleware(isAuthenticated)
+  @Mutation(() => Boolean)
+  async uploadProfileImage(
+    @Ctx() { verifiedUser }: MyContext,
+    @Arg('file', () => GraphQLUpload) file: FileUpload
+  ): Promise<boolean> {
+    // 유저 ID와 파일명을 조합하여 파일 이름 지정
+    // const realFileName = `${verifiedUser?.userId}-${file.filename}`;
+
+
+    // S3에 파일 업로드
+    try {
+      const fileUrl = await uploadImage(file);  // S3 업로드 함수 호출
+      console.log('File URL:', fileUrl);
+
+      // 업로드된 파일 URL을 User 엔티티에 저장
+      await User.update(
+        { id: verifiedUser?.userId },
+        { profileImage: file.filename }
+      );
+
+      return true;  // 성공적으로 파일 업로드 및 데이터베이스 업데이트
+    } catch (err) {
+      console.error('Error in file upload:', err);
+      return false;  // 업로드 실패
+    }
   }
 }

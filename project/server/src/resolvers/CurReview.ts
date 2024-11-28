@@ -86,7 +86,7 @@ export class CutReviewResolver {
   ): Promise<boolean> {
     const result = await CutReview.delete({
       id,
-      user: { id: verifiedUser.userId },
+      user: { id: verifiedUser?.userId },
     });
     if (result.affected && result.affected > 0) {
       return true;

@@ -10,20 +10,38 @@ import {
   verifyAccessTokenFromReqHeaders,
 } from "../utils/jwt-auth";
 import { createCutVoteLoader } from "../dataloaders/cutVoteLoader";
-import { CutReviewResolver } from "../resolvers/CurReview";
 
 export interface MyContext {
   req: Request;
   res: Response;
-  verifiedUser: JwtVerifiedUser;
+  verifiedUser: JwtVerifiedUser | null;
   // cutVoteLoader 필드 추가, ReturnType이라는 유틸리티 타입을 사용해 cutVoteLoader의 반환값을 갖도록 구성
   cutVoteLoader: ReturnType<typeof createCutVoteLoader>;
 }
 
+// const createApolloServer = async (
+//   schema: GraphQLSchema,
+// ): Promise<ApolloServer<MyContext>> => {
+//   return new ApolloServer<MyContext>({
+//     schema,
+//     plugins: [ApolloServerPluginLandingPageLocalDefault()],
+//     context: ({ req, res }): MyContext => {
+//       // 액세스 토큰 검증
+//       const verifed = verifyAccessTokenFromReqHeaders(req.headers);
+//       return {
+//         req,
+//         res,
+//         verifiedUser: verifed,
+//         cutVoteLoader: createCutVoteLoader(),
+//       };
+//     },
+//   });
+// };
+
 const createApolloServer = async (): Promise<ApolloServer> => {
   return new ApolloServer<MyContext>({
     schema: await buildSchema({
-      resolvers: [FilmResolver, CutResolver, UserResolver, CutReviewResolver],
+      resolvers: [FilmResolver, CutResolver, UserResolver],
     }),
     plugins: [ApolloServerPluginLandingPageLocalDefault()],
     context: ({ req, res }) => {
@@ -37,5 +55,6 @@ const createApolloServer = async (): Promise<ApolloServer> => {
     },
   });
 };
+
 
 export default createApolloServer;
