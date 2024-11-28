@@ -15,7 +15,7 @@ import {
   UseMiddleware,
 } from "type-graphql";
 import { CutReview } from "../entities/CutReview";
-import { isAuthenticated } from "../middleweres/isAuthenticated";
+import { isAuthenticated } from "../middlewares/isAuthenticated";
 import { MyContext } from "../apollo/createApolloServer";
 import User from "../entities/User";
 import { Not } from "typeorm";

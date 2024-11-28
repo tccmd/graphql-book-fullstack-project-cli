@@ -10,6 +10,7 @@ import {
 } from "typeorm";
 import { CutVote } from "./CutVote";
 import { CutReview } from "./CutReview";
+import Notification from "./Notification";
 
 @ObjectType() // type-graphql
 @Entity() // typeorm
@@ -49,4 +50,7 @@ export default class User extends BaseEntity {
   @Column({ comment: "프로필 사진 경로", nullable: true })
   @Field({ description: "프로필 사진 경로", nullable: true })
   profileImage: string;
+
+  @OneToMany(() => Notification, (noti) => noti.user)
+  notifications: Notification[];
 }

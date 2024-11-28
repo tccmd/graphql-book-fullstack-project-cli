@@ -22,7 +22,7 @@ import {
   setRefreshTokenHeader,
 } from '../utils/jwt-auth';
 import { MyContext } from '../apollo/createApolloServer';
-import { isAuthenticated } from '../middleweres/isAuthenticated';
+import { isAuthenticated } from '../middlewares/isAuthenticated';
 // 파일을 저장할 때 필요
 // import { createWriteStream } from 'fs';
 // GraphQL 파일 업로드를 위해 필요한 타입과 스칼라(GraphQLUpload)

@@ -1,15 +1,12 @@
 import { ApolloServerPluginLandingPageLocalDefault } from "apollo-server-core";
 import { ApolloServer } from "apollo-server-express";
-import { buildSchema } from "type-graphql";
-import { FilmResolver } from "../resolvers/Film";
-import { CutResolver } from "../resolvers/Cut";
-import { UserResolver } from "../resolvers/User";
 import { Request, Response } from "express";
 import {
   JwtVerifiedUser,
   verifyAccessTokenFromReqHeaders,
 } from "../utils/jwt-auth";
 import { createCutVoteLoader } from "../dataloaders/cutVoteLoader";
+import { GraphQLSchema } from "graphql";
 
 export interface MyContext {
   req: Request;
@@ -19,30 +16,9 @@ export interface MyContext {
   cutVoteLoader: ReturnType<typeof createCutVoteLoader>;
 }
 
-// const createApolloServer = async (
-//   schema: GraphQLSchema,
-// ): Promise<ApolloServer<MyContext>> => {
-//   return new ApolloServer<MyContext>({
-//     schema,
-//     plugins: [ApolloServerPluginLandingPageLocalDefault()],
-//     context: ({ req, res }): MyContext => {
-//       // 액세스 토큰 검증
-//       const verifed = verifyAccessTokenFromReqHeaders(req.headers);
-//       return {
-//         req,
-//         res,
-//         verifiedUser: verifed,
-//         cutVoteLoader: createCutVoteLoader(),
-//       };
-//     },
-//   });
-// };
-
-const createApolloServer = async (): Promise<ApolloServer> => {
+const createApolloServer = async (schema: GraphQLSchema): Promise<ApolloServer> => {
   return new ApolloServer<MyContext>({
-    schema: await buildSchema({
-      resolvers: [FilmResolver, CutResolver, UserResolver],
-    }),
+    schema,
     plugins: [ApolloServerPluginLandingPageLocalDefault()],
     context: ({ req, res }) => {
       const verified = verifyAccessTokenFromReqHeaders(req.headers);

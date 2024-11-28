@@ -6,32 +6,35 @@ import dotenv from 'dotenv';
 import createApolloServer from './apollo/createApolloServer';
 import { createDB } from './db/db-client';
 import { graphqlUploadExpress } from 'graphql-upload-ts';
+import { createSchema } from './apollo/createSchema';
+import { createSubscriptionServer } from './apollo/createSubscriptionServer';
 
 // .env 파일에서 작성한 모든 환경변수는 process.env에 주입되었다.
 dotenv.config();
 
 async function main() {
   const app = express();
-  // const app: Application = express();
+    // app.use(express.static('public'));
+    app.use(cookieParser());
+    app.use(
+      graphqlUploadExpress({
+        maxFieldSize: 1024 * 1000 * 5,
+        maxFiles: 1,
+      }),
+    );
+    const httpServer = http.createServer(app);
 
-  app.use(
-    graphqlUploadExpress({
-      maxFieldSize: 1024 * 1000 * 5,
-      maxFiles: 1,
-    }),
-  );
-  app.use(cookieParser());
-  // app.use(express.static('public'));
+
   app.get('/', (req, res) => {
     res.status(200).send(); // for health check
     console.log('success');
   });
 
-  const httpServer = http.createServer(app);
 
-  // const schema = await createSchema();
-  // await createSubscriptionServer(schema, httpServer);
-  const apolloServer = await createApolloServer();
+
+  const schema = await createSchema();
+  await createSubscriptionServer(schema, httpServer);
+  const apolloServer = await createApolloServer(schema);
   await apolloServer.start();
   apolloServer.applyMiddleware({
     app,
@@ -50,6 +53,7 @@ async function main() {
     },
   });
 
+
   httpServer.listen(process.env.PORT || 4000, () => {
     if (process.env.NODE_ENV !== 'production') {
       console.log(`
@@ -62,6 +66,7 @@ async function main() {
             `);
     }
   });
+  
 
   await createDB();
 }
