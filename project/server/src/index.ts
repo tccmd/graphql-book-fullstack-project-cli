@@ -7,14 +7,16 @@ import createApolloServer from './apollo/createApolloServer';
 import { createDB } from './db/db-client';
 import { graphqlUploadExpress } from 'graphql-upload-ts';
 import { createSchema } from './apollo/createSchema';
-import { createSubscriptionServer } from './apollo/createSubscriptionServer';
+import { createHandler } from 'graphql-sse/lib/use/express';
 
 // .env 파일에서 작성한 모든 환경변수는 process.env에 주입되었다.
 dotenv.config();
 
 async function main() {
+  const schema = await createSchema();
+  // Create the GraphQL over SSE handler
+  const handler = createHandler({ schema });
   const app = express();
-    // app.use(express.static('public'));
     app.use(cookieParser());
     app.use(
       graphqlUploadExpress({
@@ -22,7 +24,9 @@ async function main() {
         maxFiles: 1,
       }),
     );
-    const httpServer = http.createServer(app);
+  const httpServer = http.createServer(app);
+  // Serve all methods on `/graphql/stream`
+  app.use('/graphql/stream', handler);
 
 
   app.get('/', (req, res) => {
@@ -31,9 +35,6 @@ async function main() {
   });
 
 
-
-  const schema = await createSchema();
-  await createSubscriptionServer(schema, httpServer);
   const apolloServer = await createApolloServer(schema);
   await apolloServer.start();
   apolloServer.applyMiddleware({
@@ -48,6 +49,7 @@ async function main() {
         'https://web-ashy-alpha.vercel.app',
         'https://tccmd.site',
         'https://www.tccmd.site',
+        'https://ghibli.tccmd.site',
       ],
       credentials: true,
     },
